@@ -79,11 +79,11 @@ class Lisp:
         pkg = self.readtable.read(self.stdout)
         val = self.readtable.read(self.stdout)
         err = self.readtable.read(self.stdout)
-        msg = self.readtable.read(self.stdout)
+        self.msg = self.readtable.read(self.stdout)
         # Update the current package.
         self.package = pkg
         # Write the Lisp output to the Python output.
-        print(msg,end='')
+        print(self.msg,end='')
         # If there is an error, raise it.
         if isinstance(err, Cons):
             condition = err.car
