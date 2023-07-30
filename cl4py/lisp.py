@@ -72,18 +72,38 @@ class Lisp:
             self.process.wait()
 
 
-    def eval(self, expr):
+    def eval(self, expr, return_lisp_output=False, print_lisp_output=False):
+        """
+        Evaluate expression
+
+        Parameters
+        ----------
+        expr
+            Expression
+        return_lisp_output
+            Whether to return lisp's output message. If False, cl4py's original
+            behavior takes place. Otherwise, a tuple is returned, with the original
+            return value as first value, and lisp's output message as second one.
+        print_lisp_output
+            Whether to print lisp's output message
+
+        Returns
+        -------
+        Union[None, Cons, tuple]
+            result object, or: (result object, message)
+        """
         sexp = lispify(self, expr)
         if self.debug: print(sexp) # pylint: disable=multiple-statements
         self.stdin.write(sexp + '\n')
         pkg = self.readtable.read(self.stdout)
         val = self.readtable.read(self.stdout)
         err = self.readtable.read(self.stdout)
-        self.msg = self.readtable.read(self.stdout)
+        output = self.readtable.read(self.stdout)
         # Update the current package.
         self.package = pkg
-        # Write the Lisp output to the Python output.
-        print(self.msg,end='')
+        if print_lisp_output:
+            # Write the Lisp output to the Python output.
+            print(output, end='')
         # If there is an error, raise it.
         if isinstance(err, Cons):
             condition = err.car
@@ -104,13 +124,22 @@ class Lisp:
                 add_member_function(cls, cons.car, cons.cdr)
             for instance in instances:
                 instance.__class__ = cls
+
         # Finally, return the resulting values.
-        if val == ():
-            return None
-        elif val.cdr == ():
-            return val.car
+        if return_lisp_output:
+            if val == ():
+                return None, output
+            elif val.cdr == ():
+                return val.car, output
+            else:
+                return tuple(val), output
         else:
-            return tuple(val)
+            if val == ():
+                return None
+            elif val.cdr == ():
+                return val.car
+            else:
+                return tuple(val)
 
 
     def find_package(self, name):
